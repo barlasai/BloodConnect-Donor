@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodConnect - Official Blood Donation Platform</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+    <!-- Three.js for 3D Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            scroll-behavior: smooth;
+            background-color: #1e3a8a; /* Fallback color - Deep Blue */
+        }
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1; /* Places canvas behind all content */
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 2; /* Ensures all content is above the canvas */
+        }
+        .hero-section {
+            position: relative;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        .hospitals-section {
+             background: linear-gradient(rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.97)), url('https://images.unsplash.com/photo-1580231947945-23340236a681?q=80&w=1920&auto=format&fit=crop') no-repeat center center/cover;
+        }
+        .card-hover-effect {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        .blood-drop {
+            width: 110px;
+            height: 110px;
+            background-color: #fff;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 4px solid #dbeafe; /* Light Blue Border */
+            box-shadow: 0 10px 20px rgba(30, 64, 175, 0.1);
+        }
+        .blood-drop-content {
+            transform: rotate(45deg);
+            text-align: center;
+        }
+        .eligibility-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 20px rgba(30, 64, 175, 0.2);
+            transform: rotate(-10deg);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        .card-hover-effect:hover .eligibility-icon-wrapper {
+            transform: rotate(0deg) scale(1.1);
+        }
+        .eligibility-icon-bg {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .eligibility-icon-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(59, 130, 246, 0.7));
+        }
+        .eligibility-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 2.5rem;
+            z-index: 10;
+        }
+        .section-title {
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1.2;
+            color: #1f2937;
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: #4b5563;
+            max-width: 650px;
+            margin: 1rem auto 0;
+        }
+        /* Scroll Animation */
+        .animated-section {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animated-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Initial Hero Animation States */
+        .animate-fade-in-down { animation: fadeInDown 1s ease-out forwards; }
+        .animate-fade-in-up { animation: fadeInUp 1s ease-out 0.3s forwards; opacity: 0; }
+        .animate-fade-in { animation: fadeIn 1s ease-out 0.6s forwards; opacity: 0; }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- 3D Background Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="content-wrapper">
+        <!-- Header -->
+        <header class="bg-white/95 backdrop-blur-lg shadow-md sticky top-0 z-50">
+            <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <a href="#" class="text-3xl font-black text-blue-800 flex items-center gap-2">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    <span>BloodConnect</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-2 font-bold">
+                    <a href="#home" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Home</a>
+                    <a href="#availability" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Availability</a>
+                    <a href="#hospitals" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Hospitals</a>
+                    <a href="#testimonials" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Testimonials</a>
+                    <a href="#gallery" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Gallery</a>
+                    <a href="#contact" class="text-gray-700 hover:text-blue-800 px-4 py-2 rounded-full transition-all duration-300 hover:bg-blue-100">Contact</a>
+                </div>
+                <a href="#register" class="hidden md:block bg-orange-500 text-white px-8 py-3 rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 font-bold shadow-lg shadow-orange-200">Become a Donor</a>
+                <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </nav>
+            <div id="mobile-menu" class="hidden md:hidden px-6 pt-2 pb-4 border-t border-gray-200">
+                <a href="#home" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Home</a>
+                <a href="#availability" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Availability</a>
+                <a href="#hospitals" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Hospitals</a>
+                <a href="#testimonials" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Testimonials</a>
+                <a href="#gallery" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Gallery</a>
+                <a href="#contact" class="block text-gray-700 hover:text-blue-800 py-2 font-medium">Contact</a>
+                <a href="#register" class="block bg-orange-500 text-white text-center mt-2 px-6 py-3 rounded-full hover:bg-orange-600 transition duration-300 font-bold">Become a Donor</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Home Section -->
+            <section id="home" class="hero-section text-white min-h-[90vh] flex items-center">
+                <div class="hero-content container mx-auto px-6 text-center">
+                    <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight drop-shadow-xl animate-fade-in-down">The Gift of Blood is a Gift of Life.</h1>
+                    <p class="text-lg md:text-xl mb-12 max-w-3xl mx-auto text-gray-100 drop-shadow-md animate-fade-in-up">Join a nationwide movement of voluntary blood donors. Your contribution is vital and can save up to three lives. Be a hero today.</p>
+                    <a href="#register" class="bg-white text-blue-800 px-12 py-5 rounded-full font-bold text-xl hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl animate-fade-in">Register to Donate</a>
+                </div>
+            </section>
+
+            <!-- Availability Section -->
+            <section id="availability" class="py-28 bg-white animated-section">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="section-title">Live Blood Stock Portal</h2>
+                    <p class="section-subtitle">This is a real-time dashboard of blood unit availability. Your donation can help balance these numbers and save lives.</p>
+                    <div id="blood-stock" class="mt-20 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-x-4 gap-y-12">
+                        <!-- Blood drop cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Hospitals Section -->
+            <section id="hospitals" class="py-28 bg-blue-50/50 animated-section">
+                <div class="container mx-auto px-6">
+                    <div class="text-center">
+                        <h2 class="section-title">Find a Donation Center</h2>
+                        <p class="section-subtitle">Search our network of authorized government and private hospitals to find a donation center near you.</p>
+                    </div>
+                    <div class="my-12 max-w-2xl mx-auto">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-6 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" id="hospital-search" placeholder="Search by hospital, city, or district..." class="w-full px-6 py-5 pl-14 border-2 border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-lg">
+                        </div>
+                    </div>
+                    <div id="hospital-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Hospital cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Testimonials Section -->
+            <section id="testimonials" class="py-28 bg-white animated-section">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="section-title">Voices of Our Heroes</h2>
+                    <p class="section-subtitle">Read stories from donors who have made a life-changing impact. Your story could be next.</p>
+                    <div class="mt-20 grid md:grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div class="card-hover-effect bg-gray-50 p-8 rounded-2xl border border-gray-100 shadow-lg">
+                            <img src="https://placehold.co/100x100/60a5fa/ffffff?text=AD" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md">
+                            <p class="text-gray-600 italic">"The process was so simple and fulfilling. Knowing I helped save a life is a feeling like no other. I encourage everyone who can to donate."</p>
+                            <h4 class="mt-4 font-bold text-lg text-blue-800">- Anjali Desai</h4>
+                            <p class="text-gray-500">Software Engineer, Vijayawada</p>
+                        </div>
+                        <div class="card-hover-effect bg-gray-50 p-8 rounded-2xl border border-gray-100 shadow-lg">
+                            <img src="https://placehold.co/100x100/fb923c/ffffff?text=RK" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md">
+                            <p class="text-gray-600 italic">"My father needed blood urgently, and a stranger's donation saved him. Since then, I've been a regular donor. It's my way of giving back."</p>
+                            <h4 class="mt-4 font-bold text-lg text-blue-800">- Rajesh Kumar</h4>
+                            <p class="text-gray-500">Teacher, Kakinada</p>
+                        </div>
+                        <div class="card-hover-effect bg-gray-50 p-8 rounded-2xl border border-gray-100 shadow-lg">
+                            <img src="https://placehold.co/100x100/34d399/ffffff?text=SP" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md">
+                            <p class="text-gray-600 italic">"I was nervous at first, but the staff at the center were amazing and made me feel comfortable. It was a great experience, and I'll be back!"</p>
+                            <h4 class="mt-4 font-bold text-lg text-blue-800">- Priya Singh</h4>
+                            <p class="text-gray-500">Student, Visakhapatnam</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+          
+
+            <!-- Eligibility Section -->
+          <section id="eligibility" class="py-28 bg-white animated-section">
+    <div class="container mx-auto px-6 text-center">
+        <h2 class="section-title">Donation Eligibility Criteria</h2>
+        <p class="section-subtitle">Please review these guidelines to ensure a safe and successful donation experience for everyone.</p>
+        <div class="mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div class="card-hover-effect bg-white p-8 rounded-2xl border border-gray-100 shadow-xl">
+                <div class="eligibility-icon-wrapper">
+                    <img src="https://images.unsplash.com/photo-1558222219-03753f513c1c?q=80&w=600&auto=format&fit=crop" alt="Age Requirement" class="eligibility-image"/>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Age Requirement</h3>
+                <p class="text-gray-600">You must be between 18 and 65 years old.</p>
+            </div>
+            <div class="card-hover-effect bg-white p-8 rounded-2xl border border-gray-100 shadow-xl">
+                <div class="eligibility-icon-wrapper">
+                    <img src="https://images.unsplash.com/photo-1598812423181-748d3b55a403?q=80&w=600&auto=format&fit=crop" alt="Weight Requirement" class="eligibility-image"/>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Weight Requirement</h3>
+                <p class="text-gray-600">You must weigh at least 50 kg (110 lbs).</p>
+            </div>
+            <div class="card-hover-effect bg-white p-8 rounded-2xl border border-gray-100 shadow-xl">
+                <div class="eligibility-icon-wrapper">
+                    <img src="https://images.unsplash.com/photo-1505751172876-66b4b624076f?q=80&w=600&auto=format&fit=crop" alt="Good Health" class="eligibility-image"/>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Good Health</h3>
+                <p class="text-gray-600">You must be in good general health and feel well.</p>
+            </div>
+            <div class="card-hover-effect bg-white p-8 rounded-2xl border border-gray-100 shadow-xl">
+                <div class="eligibility-icon-wrapper">
+                    <img src="https://images.unsplash.com/photo-1605699435642-184b2c2a5a22?q=80&w=600&auto=format&fit=crop" alt="No Recent Procedures" class="eligibility-image"/>
+                </div>
+                <h3 class="text-xl font-bold mb-2">No Recent Procedures</h3>
+                <p class="text-gray-600">No tattoos or piercings in the last 6 months.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+            <!-- Become a Donor Section -->
+            <section id="register" class="py-28 bg-blue-50/50 animated-section">
+                <div class="container mx-auto px-6">
+                    <div class="max-w-6xl mx-auto grid md:grid-cols-2 items-center gap-16">
+                        <div class="text-center md:text-left">
+                            <h2 class="section-title">Join Our Lifesaver Community</h2>
+                            <p class="section-subtitle text-left mx-0 mt-6">By registering, you become part of a network of heroes on standby. We'll notify you when your blood type is in urgent need. Fill out the form and take the first step to making a monumental difference.</p>
+                            <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1920&auto=format&fit=crop" class="mt-10 rounded-2xl shadow-xl" alt="A group of smiling volunteers"/>
+                        </div>
+                        <div class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl card-hover-effect">
+                            <h3 class="text-3xl font-bold text-center mb-8">Donor Registration Form</h3>
+                            <form id="donor-form">
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="name" class="block text-gray-700 font-semibold mb-2">Full Name</label>
+                                        <input type="text" id="name" name="name" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label for="email" class="block text-gray-700 font-semibold mb-2">Email Address</label>
+                                        <input type="email" id="email" name="email" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label for="phone" class="block text-gray-700 font-semibold mb-2">Phone Number</label>
+                                        <input type="tel" id="phone" name="phone" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label for="blood-group" class="block text-gray-700 font-semibold mb-2">Blood Group</label>
+                                        <select id="blood-group" name="blood-group" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                            <option value="">Select Blood Group</option>
+                                            <option value="A+">A+</option> <option value="A-">A-</option> <option value="B+">B+</option> <option value="B-">B-</option> <option value="AB+">AB+</option> <option value="AB-">AB-</option> <option value="O+">O+</option> <option value="O-">O-</option>
+                                        </select>
+                                        <div>
+                                        <label for="location" class="block text-gray-700 font-semibold mb-2">Your Location (City/Town)</label>
+                                        <input type="text" id="location" name="location" placeholder="e.g., Kakinada" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="mt-10 text-center">
+                                    <button type="submit" class="bg-orange-500 text-white px-12 py-4 rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 font-bold text-lg w-full shadow-lg shadow-orange-200">Register as a Donor</button>
+                                </div>
+                            </form>
+                            <div id="form-message" class="mt-6 text-center font-semibold"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Slogan Generator Section -->
+            <section id="slogans" class="py-28 bg-white animated-section">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="section-title">Inspire Others</h2>
+                    <p class="section-subtitle">Need a catchy slogan for your blood donation drive? Let our AI help you create one!</p>
+                    <button id="generate-slogan-btn" class="mt-8 bg-blue-700 text-white px-8 py-4 rounded-full hover:bg-blue-800 transition-all duration-300 transform hover:scale-105 font-bold text-lg shadow-lg shadow-blue-200">
+                        ✨ Generate Slogans
+                    </button>
+                    <div id="slogan-output" class="mt-8 text-left max-w-2xl mx-auto bg-gray-50 p-6 rounded-lg shadow-inner min-h-[150px]">
+                        Click the button to generate slogans...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section id="contact" class="py-28 bg-gray-50 animated-section">
+                <div class="container mx-auto px-6">
+                    <div class="text-center">
+                        <h2 class="section-title">Get In Touch</h2>
+                        <p class="section-subtitle">Have questions or feedback? We'd love to hear from you. Reach out to us via the form below or through our contact details.</p>
+                    </div>
+                    <div class="mt-20 max-w-6xl mx-auto grid md:grid-cols-2 gap-16">
+                        <div class="space-y-8">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-blue-100 text-blue-800 p-4 rounded-xl text-2xl"><i class="fas fa-map-marker-alt"></i></div>
+                                <div>
+                                    <h3 class="text-xl font-bold">Our Location</h3>
+                                    <p class="text-gray-600">pragati Engineering College, Surampalem, Andhra Pradesh 533437</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start gap-4">
+                                <div class="bg-blue-100 text-blue-800 p-4 rounded-xl text-2xl"><i class="fas fa-phone-alt"></i></div>
+                                <div>
+                                    <h3 class="text-xl font-bold">Call Us</h3>
+                                    <p class="text-gray-600">+91 9701424377</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start gap-4">
+                                <div class="bg-blue-100 text-blue-800 p-4 rounded-xl text-2xl"><i class="fas fa-envelope"></i></div>
+                                <div>
+                                    <h3 class="text-xl font-bold">Email Us</h3>
+                                    <p class="text-gray-600">contact@bloodconnect.org</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl shadow-lg">
+                             <h3 class="text-2xl font-bold text-center mb-6">Send Us a Message</h3>
+                             <form id="contact-form">
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="contact-name" class="block text-gray-700 font-semibold mb-2">Your Name</label>
+                                        <input type="text" id="contact-name" name="contact-name" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label for="contact-email" class="block text-gray-700 font-semibold mb-2">Your Email</label>
+                                        <input type="email" id="contact-email" name="contact-email" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label for="contact-message" class="block text-gray-700 font-semibold mb-2">Message</label>
+                                        <textarea id="contact-message" name="contact-message" rows="4" class="w-full px-5 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="mt-8 text-center">
+                                    <button type="submit" class="bg-blue-700 text-white px-12 py-4 rounded-full hover:bg-blue-800 transition-all duration-300 transform hover:scale-105 font-bold text-lg w-full shadow-lg shadow-blue-200">Send Message</button>
+                                </div>
+                            </form>
+                            <div id="contact-form-message" class="mt-6 text-center font-semibold"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-white py-20">
+            <div class="container mx-auto px-6 text-center">
+                <a href="#" class="text-4xl font-black text-white mb-4 inline-block flex items-center justify-center gap-3">
+                    <i class="fas fa-hand-holding-heart"></i> BloodConnect
+                </a>
+                <p class="max-w-lg mx-auto text-gray-400 mb-8">Connecting donors with those in need. Your single act of kindness can save lives. Join us in our mission to create a healthier future.</p>
+                <div class="flex justify-center space-x-8 mb-8">
+                    <a href="#" class="hover:text-blue-400 text-2xl transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="hover:text-blue-400 text-2xl transition duration-300"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-blue-400 text-2xl transition duration-300"><i class="fab fa-instagram"></i></a>
+                </div>
+                 <p class="text-gray-500">&copy; 2025 BloodConnect. All Rights Reserved. | <a href="admin.html" class="hover:text-blue-400">Admin Panel</a></p>
+                <p class="mt-2 text-gray-500">Made with <i class="fas fa-heart text-blue-500"></i> in Surampalem.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script type="module">
+     // These variables would be provided by the environment in a real scenario
+        const __app_id = 'blood-donation-app-v1';
+        const __firebase_config = JSON.stringify({
+        apiKey: "AIzaSyBEd-Htk6HF3pYKQFrnTnLmXmIeKg4r31w",
+        authDomain: "bloodconnect-project-a8546.firebaseapp.com",
+        projectId: "bloodconnect-project-a8546",
+        storageBucket: "bloodconnect-project-a8546.appspot.com",
+        messagingSenderId: "505157842543",
+        appId: "1:505157842543:web:1d51bc0f5539b73923bf9a",
+        measurementId: "G-FJF0YQFBWY"
+        });
+const __initial_auth_token = undefined;
+        
+
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- Firebase Initialization ---
+     // --- Firebase Initialization ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-blood-app';
+
+
+        // --- Anonymous Authentication ---
+        signInAnonymously(auth).catch((error) => console.error("Anonymous sign-in failed:", error));
+
+        // --- DOM Elements ---
+        const donorForm = document.getElementById('donor-form');
+        const formMessage = document.getElementById('form-message');
+        const contactForm = document.getElementById('contact-form');
+        const contactFormMessage = document.getElementById('contact-form-message');
+        const bloodStockContainer = document.getElementById('blood-stock');
+        const hospitalListContainer = document.getElementById('hospital-list');
+        const hospitalSearchInput = document.getElementById('hospital-search');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const generateSloganBtn = document.getElementById('generate-slogan-btn');
+        const sloganOutput = document.getElementById('slogan-output');
+
+        // --- Gemini API Function ---
+        async function callGemini(prompt) {
+            const apiKey = ""; // Leave empty, handled by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    return null;
+                }
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                return null;
+            }
+        }
+
+
+        // --- Event Listeners ---
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                if (!mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
+            });
+        });
+
+        donorForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = donorForm.name.value;
+            const email = donorForm.email.value;
+            const phone = donorForm.phone.value;
+            const bloodGroup = donorForm['blood-group'].value;
+
+            const phoneRegex = /^\d{10}$/;
+            if (!phoneRegex.test(phone)) {
+                formMessage.textContent = 'Please enter a valid 10-digit phone number.';
+                formMessage.className = 'text-red-600';
+                return;
+            }
+            
+            formMessage.textContent = 'Registering...';
+            formMessage.className = 'text-blue-600';
+            
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/public/data/donors`), { 
+                    name: name, 
+                    email: email, 
+                    phone: phone, 
+                    bloodGroup: bloodGroup, 
+                    location: "Surampalem", 
+                    registeredAt: new Date() 
+                });
+
+                formMessage.textContent = 'Generating a special thank you...';
+                const prompt = `Write a short, heartfelt, and personalized thank you message for a new blood donor named ${name}. Their blood group is ${bloodGroup}. Mention the importance of their specific blood type in a positive way. Keep it under 50 words.`;
+                const thankYouMessage = await callGemini(prompt);
+
+                if (thankYouMessage) {
+                    formMessage.innerHTML = `<p class="text-green-600 text-lg">✨ ${thankYouMessage}</p>`;
+                } else {
+                    formMessage.textContent = `Thank you, ${name}! You are a true hero.`;
+                    formMessage.className = 'text-green-600';
+                }
+
+                donorForm.reset();
+                setTimeout(() => formMessage.innerHTML = '', 8000);
+
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                formMessage.textContent = 'Registration failed. Please try again later.';
+                formMessage.className = 'text-red-600';
+            }
+        });
+
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = contactForm['contact-name'].value;
+            const email = contactForm['contact-email'].value;
+            const message = contactForm['contact-message'].value;
+            contactFormMessage.textContent = 'Sending message...';
+            contactFormMessage.className = 'text-blue-600';
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/public/data/contacts`), { name, email, message, sentAt: new Date() });
+                contactFormMessage.textContent = 'Message sent successfully! We will get back to you soon.';
+                contactFormMessage.className = 'text-green-600';
+                contactForm.reset();
+                setTimeout(() => contactFormMessage.textContent = '', 5000);
+            } catch (error) {
+                console.error("Error sending message: ", error);
+                contactFormMessage.textContent = 'Failed to send message. Please try again later.';
+                contactFormMessage.className = 'text-red-600';
+            }
+        });
+
+        generateSloganBtn.addEventListener('click', async () => {
+            sloganOutput.innerHTML = '<p class="text-gray-500">✨ Generating inspiring slogans...</p>';
+            const prompt = "Generate a list of 5 short, creative, and motivational slogans for a blood donation drive. Format them as a numbered list.";
+            const slogans = await callGemini(prompt);
+            if (slogans) {
+                sloganOutput.innerHTML = slogans.replace(/\n/g, '<br>');
+            } else {
+                sloganOutput.innerHTML = '<p class="text-red-500">Could not generate slogans at this time. Please try again.</p>';
+            }
+        });
+
+
+        // --- Firestore Real-time Data for Blood Stock ---
+        const stockCollectionPath = `artifacts/${appId}/public/data/bloodStock`;
+        const initializeBloodStock = async () => {
+            const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+            const stockCollectionRef = collection(db, stockCollectionPath);
+            const snapshot = await getDocs(stockCollectionRef);
+            if (snapshot.empty) {
+                const batch = [];
+                bloodGroups.forEach(group => {
+                    const docRef = doc(db, stockCollectionPath, group);
+                    batch.push(setDoc(docRef, { units: Math.floor(Math.random() * 20) + 5 }));
+                });
+                await Promise.all(batch);
+            }
+        };
+
+        const renderBloodStock = (stockData) => {
+            bloodStockContainer.innerHTML = '';
+            const bloodGroupsOrder = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+            bloodGroupsOrder.forEach(group => {
+                const stock = stockData.find(s => s.id === group) || { units: 0 };
+                const card = document.createElement('div');
+                card.className = 'card-hover-effect text-center';
+                card.innerHTML = `
+                    <div class="blood-drop">
+                        <div class="blood-drop-content">
+                            <div class="text-3xl font-black text-blue-800">${group}</div>
+                            <div class="text-sm text-gray-500 font-semibold mt-1">${stock.units} Units</div>
+                        </div>
+                    </div>
+                `;
+                bloodStockContainer.appendChild(card);
+            });
+        };
+
+        const listenForStockUpdates = () => {
+            const stockCollectionRef = collection(db, stockCollectionPath);
+            onSnapshot(stockCollectionRef, (snapshot) => {
+                const stockData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderBloodStock(stockData);
+            }, (error) => {
+                console.error("Error listening to blood stock updates:", error);
+                bloodStockContainer.innerHTML = `<p class="col-span-full text-center text-red-500">Could not load blood stock data.</p>`;
+            });
+        };
+
+        // --- Hospital Data & Search ---
+        const allHospitals = [
+            // East Godavari
+            { name: 'Govt. General Hospital (GGH)', location: 'Kakinada', needs: ['O+', 'B-'], phone: '9999911111', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GGH+Kakinada', contactPerson: 'Mr. Ravi Kumar' },
+            { name: 'Apollo Hospital', location: 'Kakinada', needs: ['A-', 'AB-'], phone: '9999944444', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Apollo+Kakinada', contactPerson: 'Ms. Priya Sharma' },
+            { name: 'Govt. General Hospital (GGH)', location: 'Rajahmundry', needs: ['O-', 'B+'], phone: '9999977777', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GGH+Rajahmundry', contactPerson: 'Dr. Anil Prasad' },
+            { name: 'GSL Medical College', location: 'Rajahmundry', needs: ['All Types'], phone: '9999988888', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GSL+Rajahmundry', contactPerson: 'Mr. Suresh Varma' },
+            { name: 'Area Hospital', location: 'Amalapuram', needs: ['A+', 'B+'], phone: '9988811111', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Area+Hospital', contactPerson: 'Ms. Lakshmi' },
+            { name: 'KIMS Hospital', location: 'Amalapuram', needs: ['O-', 'AB+'], phone: '9988822222', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=KIMS+Amalapuram', contactPerson: 'Mr. David Raju' },
+            { name: 'Indian Red Cross Society', location: 'Kakinada', needs: ['All Types'], phone: '9999955555', image: 'https://placehold.co/600x400/ef4444/ffffff?text=Red+Cross', contactPerson: 'Blood Bank Incharge' },
+            // West Godavari
+            { name: 'District Hospital (GGH)', location: 'Eluru', needs: ['A+', 'O+'], phone: '9977711111', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GGH+Eluru', contactPerson: 'Dr. Fatima Begum' },
+            { name: 'Area Hospital', location: 'Bhimavaram', needs: ['B+', 'AB+'], phone: '9977722222', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Area+Hospital', contactPerson: 'Mr. Srinivas' },
+            { name: 'Area Hospital', location: 'Tadepalligudem', needs: ['O-', 'A-'], phone: '9977733333', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Area+Hospital', contactPerson: 'Ms. Sunitha' },
+            { name: 'Area Hospital', location: 'Tanuku', needs: ['All Types'], phone: '9977744444', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Area+Hospital', contactPerson: 'Mr. Krishna Reddy' },
+            { name: 'CHC', location: 'Polavaram', needs: ['B+', 'O+'], phone: '9977713131', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=CHC+Polavaram', contactPerson: 'Medical Officer' },
+            // Visakhapatnam (Vizag)
+            { name: 'King George Hospital (KGH)', location: 'Visakhapatnam', needs: ['All Types'], phone: '8888811111', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=KGH+Vizag', contactPerson: 'Dr. Rajeshwari' },
+            { name: 'Apollo Hospitals, Ramnagar', location: 'Visakhapatnam', needs: ['O-', 'A-'], phone: '8888822222', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Apollo+Vizag', contactPerson: 'Ms. Anita Desai' },
+            { name: 'Care Hospitals', location: 'Visakhapatnam', needs: ['B+', 'AB+'], phone: '8888833333', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Care+Vizag', contactPerson: 'Mr. Anand' },
+            { name: 'SevenHills Hospital', location: 'Visakhapatnam', needs: ['A+', 'O+'], phone: '8888844444', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=SevenHills+Vizag', contactPerson: 'Mr. Peter Fernandes' },
+            // Guntur
+            { name: 'Govt. General Hospital (GGH)', location: 'Guntur', needs: ['All Types'], phone: '8888866666', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GGH+Guntur', contactPerson: 'Chief Medical Officer' },
+            { name: 'AIIMS Mangalagiri', location: 'Guntur', needs: ['O-', 'B-'], phone: '8888877777', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=AIIMS+Guntur', contactPerson: 'Blood Bank Coordinator' },
+            // Vijayawada
+            { name: 'Govt. General Hospital (Old)', location: 'Vijayawada', needs: ['All Types'], phone: '8888810101', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=GGH+Vijayawada', contactPerson: 'Dr. Mary Thomas' },
+            { name: 'Manipal Hospitals', location: 'Vijayawada', needs: ['A-', 'B-'], phone: '8888812121', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Manipal+Vijayawada', contactPerson: 'Mr. Vikram Singh' },
+        ];
+
+        const renderHospitals = (hospitalsToRender) => {
+            hospitalListContainer.innerHTML = '';
+            if (hospitalsToRender.length === 0) {
+                hospitalListContainer.innerHTML = `<p class="col-span-full text-center text-gray-600">No hospitals found matching your search.</p>`;
+                return;
+            }
+            hospitalsToRender.forEach(hospital => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl flex flex-col justify-between card-hover-effect shadow-lg border border-gray-100 overflow-hidden';
+                card.innerHTML = `
+                    <div>
+                        <img src="${hospital.image}" alt="${hospital.name}" class="w-full h-40 object-cover">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">${hospital.name}</h3>
+                            <p class="text-gray-500 mb-2 font-medium"><i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>${hospital.location}</p>
+                            <p class="text-gray-500 mb-4 font-medium"><i class="fas fa-user mr-2 text-blue-600"></i>Contact: ${hospital.contactPerson}</p>
+                            <div class="mb-5">
+                                <h4 class="font-semibold mb-2 text-gray-800">Urgent Needs:</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${hospital.needs.map(need => `<span class="bg-orange-100 text-orange-800 text-sm font-bold mr-2 px-3 py-1 rounded-full">${need}</span>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0">
+                      <a href="tel:${hospital.phone}" class="bg-blue-700 text-white text-center px-6 py-3 rounded-full hover:bg-blue-800 transition-all duration-300 transform hover:scale-105 font-bold w-full block shadow-lg shadow-blue-200">
+                          <i class="fas fa-phone-alt mr-2"></i>Contact Hospital
+                      </a>
+                    </div>
+                `;
+                hospitalListContainer.appendChild(card);
+            });
+        };
+
+        hospitalSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredHospitals = allHospitals.filter(hospital => 
+                hospital.name.toLowerCase().includes(searchTerm) || 
+                hospital.location.toLowerCase().includes(searchTerm)
+            );
+            renderHospitals(filteredHospitals);
+        });
+
+        // --- Three.js 3D Background ---
+        const init3DBackground = () => {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const particles = new THREE.Group();
+            const geometry = new THREE.TorusGeometry(0.7, 0.2, 16, 40);
+            geometry.scale(1, 0.5, 1);
+            const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, transparent: true, opacity: 0.7 });
+
+            for (let i = 0; i < 150; i++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
+                mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                const scale = Math.random() * 0.5 + 0.5;
+                mesh.scale.set(scale, scale, scale);
+                particles.add(mesh);
+            }
+            scene.add(particles);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            camera.position.z = 10;
+            const clock = new THREE.Clock();
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+                particles.rotation.x = elapsedTime * 0.05;
+                particles.rotation.y = elapsedTime * 0.1;
+                renderer.render(scene, camera);
+            };
+
+            const onWindowResize = () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            };
+
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        };
+        
+        // --- Scroll Animations ---
+        const scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.animated-section').forEach((section) => {
+            scrollObserver.observe(section);
+        });
+
+        // --- Initialize Page ---
+        initializeBloodStock().then(() => {
+            listenForStockUpdates();
+        });
+        renderHospitals(allHospitals);
+        init3DBackground();
+
+    </script>
+</body>
+</html>
+

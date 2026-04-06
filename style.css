@@ -1,0 +1,128 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    scroll-behavior: smooth;
+    background-color: #1e3a8a; /* Fallback color - Deep Blue */
+}
+#bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: -1; /* Places canvas behind all content */
+}
+.content-wrapper {
+    position: relative;
+    z-index: 2; /* Ensures all content is above the canvas */
+}
+.hero-section {
+    position: relative;
+}
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+.card-hover-effect {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover-effect:hover {
+    transform: translateY(-12px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+.blood-drop {
+    width: 110px;
+    height: 110px;
+    background-color: #fff;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 4px solid #dbeafe; /* Light Blue Border */
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.1);
+}
+.blood-drop-content {
+    transform: rotate(45deg);
+    text-align: center;
+}
+.eligibility-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.2);
+    transform: rotate(-10deg);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+.card-hover-effect:hover .eligibility-icon-wrapper {
+    transform: rotate(0deg) scale(1.1);
+}
+.eligibility-icon-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+.eligibility-icon-bg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(59, 130, 246, 0.7));
+}
+.eligibility-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 2.5rem;
+    z-index: 10;
+}
+.section-title {
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 1.2;
+    color: #1f2937;
+}
+.section-subtitle {
+    font-size: 1.125rem;
+    color: #4b5563;
+    max-width: 650px;
+    margin: 1rem auto 0;
+}
+
+/* Scroll Animation */
+.animated-section {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.animated-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Initial Hero Animation States */
+.animate-fade-in-down { animation: fadeInDown 1s ease-out forwards; }
+.animate-fade-in-up { animation: fadeInUp 1s ease-out 0.3s forwards; opacity: 0; }
+.animate-fade-in { animation: fadeIn 1s ease-out 0.6s forwards; opacity: 0; }
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
